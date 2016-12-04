@@ -110,7 +110,7 @@ if (data->started) {
 
 	if (data->count%25==0) {
 
-		for (int i=0; i<game->data->buttons; i++) {
+		for (int i=0; i<10; i++) {
 int wrog = -1;
       float d = 200;
 			for (int j=0; j<10; j++) {
@@ -213,7 +213,9 @@ if (val<0) val=0;
 val*=8;
 //PrintConsole(game, "d: %f; led: %d", d, val);
 
-    if (game->data->players[i].active) {
+if  (i<game->data->buttons) {
+
+	  if (game->data->players[i].active) {
 			if (val>=200) {
 				randomButtonColor(&barray, 255, 255, 255, i);
 			} else {
@@ -244,8 +246,8 @@ val*=8;
 
 		pos = 0;
 
-	}
-
+  }
+		}
 	}
 	data->count++;
 }
