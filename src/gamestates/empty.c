@@ -273,8 +273,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	     (ev->keyboard.keycode == ALLEGRO_KEY_6) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_7) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_9) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_0)
+	     (ev->keyboard.keycode == ALLEGRO_KEY_9)
 	    )) {
 
 		if ((!data->starting) && (!data->out)) {

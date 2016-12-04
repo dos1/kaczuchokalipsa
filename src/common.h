@@ -16,7 +16,7 @@ struct Player {
 
 struct CommonResources {
 		// Fill in with common data accessible from all gamestates.
-		struct libusb_device_handle *handle[1024];
+		struct libusb_device_handle *handle[10];
 		int buttons;
 
 		struct Player players[10];

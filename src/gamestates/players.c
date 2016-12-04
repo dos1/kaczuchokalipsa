@@ -22,6 +22,7 @@
 #include "../common.h"
 #include "../libs/ulboard.h"
 #include "strings.h"
+#include "math.h"
 #include "../libs/common.h"
 #include <libsuperderpy.h>
 
@@ -35,7 +36,7 @@ struct GamestateResources {
 		int blink_counter;
 		int count;
 
-		ALLEGRO_BITMAP *kaczka;
+		ALLEGRO_BITMAP *kaczka, *kaczka2;
 };
 
 int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
@@ -51,17 +52,17 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 		game->data->players[i].x += 0.1 * cos(game->data->players[i].rot);
 		game->data->players[i].y += 0.1 * sin(game->data->players[i].rot);
 
-		if (game->data->players[i].x < -5) {
-			game->data->players[i].x = 105;
+		if (game->data->players[i].x < 0) {
+			game->data->players[i].x = 100;
 		}
-		if (game->data->players[i].y < -5) {
-			game->data->players[i].y = 105;
+		if (game->data->players[i].y < 0) {
+			game->data->players[i].y = 100;
 		}
-		if (game->data->players[i].x > 105) {
-			game->data->players[i].x = -5;
+		if (game->data->players[i].x > 100) {
+			game->data->players[i].x = 0;
 		}
-		if (game->data->players[i].y > 105) {
-			game->data->players[i].y = -5;
+		if (game->data->players[i].y > 100) {
+			game->data->players[i].y = 0;
 		}
 
 		if (game->data->players[i].rotating) {
@@ -69,15 +70,78 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 		}
 	}
 
-	if (data->count%30==0) {
+	if (data->count%20==0) {
 
 		for (int i=0; i<game->data->buttons; i++) {
 
+			float d = 200;
+			for (int j=0; j<10; j++) {
+				if (i==j) continue;
+				if (!game->data->players[i].active) continue;
+				if (!game->data->players[j].active) continue;
+
+//				PrintConsole(game, "i: %d, j: %d - x1: %f, y1: %f;;; x2: %f, y2: %f", i,j,game->data->players[i].x, game->data->players[i].y, game->data->players[j].x, game->data->players[j].y);
+
+				  float dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x,2) + pow(game->data->players[i].y-game->data->players[j].y,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x-100,2) + pow(game->data->players[i].y-game->data->players[j].y,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x-100,2) + pow(game->data->players[i].y-game->data->players[j].y-100,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x-100,2) + pow(game->data->players[i].y-game->data->players[j].y+100,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x,2) + pow(game->data->players[i].y-game->data->players[j].y-100,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x,2) + pow(game->data->players[i].y-game->data->players[j].y+100,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x+100,2) + pow(game->data->players[i].y-game->data->players[j].y,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x+100,2) + pow(game->data->players[i].y-game->data->players[j].y-100,2));
+					if (dd<d) {
+						d=dd;
+					}
+					dd = sqrt(pow(game->data->players[i].x-game->data->players[j].x+100,2) + pow(game->data->players[i].y-game->data->players[j].y+100,2));
+					if (dd<d) {
+						d=dd;
+
+				}
+			}
 
 		unsigned char barray[USBBTN_SIZE];
 
-		if (game->data->players[i].active) {
-			randomButtonColor(&barray, (game->data->players[i].rotating) ? 255 : 0, 0, 128, i);
+//if (d>100) d = 100;
+//d-=80;
+//d=20-d;
+//if (d<0) d=0;
+
+int val = (d/200.0)*255;
+val=255-val;
+val-=192;
+val-=32;
+if (val<0) val=0;
+val*=8;
+PrintConsole(game, "d: %f; led: %d", d, val);
+
+    if (game->data->players[i].active) {
+			if (val>200) {
+				randomButtonColor(&barray, 255, 255, 255, i);
+			} else {
+				randomButtonColor(&barray, ((game->data->players[i].rotating) ? 16 : 0), 1, val, i);
+			}
 		} else {
 			randomButtonColor(&barray, 0, 0, 0, i);
 		}
@@ -117,9 +181,47 @@ al_clear_to_color(al_map_rgb(65,54,92));
 		if (!game->data->players[i].active) {
 			continue;
 		}
-al_draw_scaled_rotated_bitmap(data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
                               game->data->players[i].x * game->viewport.width / 100.0, game->data->players[i].y * game->viewport.height / 100.0,
                               0.2, 0.2, game->data->players[i].rot, 0);
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              (100+game->data->players[i].x) * game->viewport.width / 100.0, game->data->players[i].y * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              (game->data->players[i].x-100) * game->viewport.width / 100.0, game->data->players[i].y * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              game->data->players[i].x * game->viewport.width / 100.0, (game->data->players[i].y+100) * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              (100+game->data->players[i].x) * game->viewport.width / 100.0, (game->data->players[i].y+100) * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              (game->data->players[i].x-100) * game->viewport.width / 100.0, (game->data->players[i].y+100) * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              game->data->players[i].x * game->viewport.width / 100.0, (game->data->players[i].y-100) * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              (100+game->data->players[i].x) * game->viewport.width / 100.0, (game->data->players[i].y-100) * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+al_draw_scaled_rotated_bitmap(i==0 ? data->kaczka2 : data->kaczka, al_get_bitmap_width(data->kaczka)/2, al_get_bitmap_height(data->kaczka)/2,
+                              (game->data->players[i].x-100) * game->viewport.width / 100.0, (game->data->players[i].y-100) * game->viewport.height / 100.0,
+                              0.2, 0.2, game->data->players[i].rot, 0);
+
+
 	}
 }
 
@@ -127,7 +229,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	// Called for each event in Allegro event queue.
 	// Here you can handle user input, expiring timers etc.
 	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE)) {
-		  UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
+		  SwitchCurrentGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
 		// When there are no active gamestates, the engine will quit.
 	}
 
@@ -142,15 +244,16 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	     (ev->keyboard.keycode == ALLEGRO_KEY_6) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_7) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_9) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_0)
+	     (ev->keyboard.keycode == ALLEGRO_KEY_9)
 	    )) {
 	if (!game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].active) {
 		  game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].active = true;
 	} else {
 		game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].rotating = !game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].rotating;
-
 		int i = ev->keyboard.keycode - ALLEGRO_KEY_1;
+
+		if (i<game->data->buttons) {
+
 		unsigned char barray[USBBTN_SIZE];
 
 		  randomButtonColor(&barray, (game->data->players[i].rotating) ? 255 : 0, 0, 128, i);
@@ -175,7 +278,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		}
 
 		pos = 0;
-
+}
 
 	}
 	}
@@ -188,6 +291,7 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	struct GamestateResources *data = malloc(sizeof(struct GamestateResources));
 	data->font = al_create_builtin_font();
 	data->kaczka = al_load_bitmap(GetDataFilePath(game, "duckgame.png"));
+	data->kaczka2 = al_load_bitmap(GetDataFilePath(game, "duckgame2.png"));
 
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
 	return data;
