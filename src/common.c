@@ -67,6 +67,10 @@ for (size_t idx = 0; idx < count; ++idx) {
 	}
 
 
+	data->musicsample = al_load_sample( GetDataFilePath(game, "music.wav") );
+	data->music = al_create_sample_instance(data->musicsample);
+	al_attach_sample_instance_to_mixer(data->music, game->audio.music);
+	al_set_sample_instance_playmode(data->music, ALLEGRO_PLAYMODE_LOOP);
 
 	return data;
 }

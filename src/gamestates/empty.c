@@ -39,7 +39,8 @@ struct GamestateResources {
 		// It gets created on load and then gets passed around to all other function calls.
 		ALLEGRO_FONT *font;
 		int blink_counter;
-
+		ALLEGRO_SAMPLE *musicsample;
+		ALLEGRO_SAMPLE_INSTANCE *music;
 		int counter;
 		int position;
 
@@ -206,12 +207,12 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	                              sin(data->counter/16.0)/4.0, 0);
 
 
-	al_draw_scaled_bitmap(data->circle, 0, 0, al_get_bitmap_width(data->circle), al_get_bitmap_height(data->circle),
-	                      0, game->viewport.height-game->viewport.height*0.247222,
-	                      game->viewport.width*0.1390625, game->viewport.height*0.247222, 0);
+/*	al_draw_scaled_bitmap(data->circle, 0, 0, al_get_bitmap_width(data->circle), al_get_bitmap_height(data->circle),
+												0, game->viewport.height-game->viewport.height*0.247222,
+												game->viewport.width*0.1390625, game->viewport.height*0.247222, 0);
 
 	DrawCharacter(game, data->hashdash, al_map_rgba(255,255,255,255), 0);
-
+*/
 
 	al_draw_filled_rectangle(0,  game->viewport.height*data->transy/100.0, game->viewport.width, game->viewport.height, al_map_rgb(0,0,0));
 
@@ -239,6 +240,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		if (data->out) {
 			UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
 		} else {
+			al_play_sample_instance(data->music);
 			data->out = true;
 			Gamestate_Stop(game, data);
 
@@ -263,8 +265,20 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		// When there are no active gamestates, the engine will quit.
 	}
 
+if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_F)) {
+	game->config.fullscreen = !game->config.fullscreen;
+	if (game->config.fullscreen) {
+		      SetConfigOption(game, "SuperDerpy", "fullscreen", "1");
+					al_hide_mouse_cursor(game->display);
+	} else {
+		      SetConfigOption(game, "SuperDerpy", "fullscreen", "0");
+					al_show_mouse_cursor(game->display);
+	}
+	al_set_display_flag(game->display, ALLEGRO_FULLSCREEN_WINDOW, game->config.fullscreen);
+	SetupViewport(game, game->viewport_config);
+	PrintConsole(game, "Fullscreen toggled");}
 
-	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
+  if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
 	   ( (ev->keyboard.keycode == ALLEGRO_KEY_1) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_2) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_3) ||
@@ -278,7 +292,8 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 
 		if ((!data->starting) && (!data->out)) {
 
-			game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].active = true;
+			//			game->data->berek = ev->keyboard.keycode - ALLEGRO_KEY_1;
+			al_play_sample_instance(data->music);
 
 data->starting = true;
       data->out = true;
@@ -321,6 +336,12 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	SelectSpritesheet(game, data->hashdash, "blink");
 	SetCharacterPositionF(game, data->hashdash, 0.02, 0.85, 0);
 
+	data->musicsample = al_load_sample( GetDataFilePath(game, "kwa.wav") );
+	data->music = al_create_sample_instance(data->musicsample);
+	al_attach_sample_instance_to_mixer(data->music, game->audio.fx);
+	al_set_sample_instance_playmode(data->music, ALLEGRO_PLAYMODE_ONCE);
+
+
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
 	return data;
 }
@@ -335,6 +356,16 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
+
+	for (int i=0; i<10; i++) {
+		game->data->players[i].active = false;
+		game->data->players[i].offtime = 0;
+	}
+
+	al_stop_sample_instance(game->data->music);
+	al_play_sample_instance(game->data->music);
+	al_play_sample_instance(data->music);
+	al_set_sample_instance_gain(game->data->music, 0.8);
 	data->blink_counter = 0;
 	data->counter = 0;
 	data->starting = false;

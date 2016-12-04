@@ -17,7 +17,7 @@
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="drawing.svg"
-   inkscape:export-filename="/home/dos/git/kaczuchokalipsa/kaczucha.png"
+   inkscape:export-filename="/home/dos/git/kaczuchokalipsa/data/king2.png"
    inkscape:export-xdpi="261.81"
    inkscape:export-ydpi="261.81">
   <defs
@@ -31,7 +31,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.4142136"
      inkscape:cx="476.05817"
-     inkscape:cy="690.36774"
+     inkscape:cy="633.7992"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -673,5 +673,10 @@ AQZZH3iDY4kOAAAAAElFTkSuQmCC
        height="0.56551462"
        width="0.74165851"
        transform="matrix(0.97917373,-0.20302416,0.20302416,0.97917373,0,0)" />
+    <path
+       style="fill:#f4e6cb;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 386.82677,187.41549 -35.50411,-93.957198 33.32163,10.472248 16.86969,-33.051666 33.0033,16.164243 22.38849,-24.925 22.71187,21.122753 31.04743,-22.683852 11.81179,27.54054 29.97525,-17.648927 -15.57856,93.208409 z"
+       id="path4253"
+       inkscape:connector-curvature="0" />
   </g>
 </svg>

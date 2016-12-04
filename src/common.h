@@ -12,6 +12,7 @@ struct Player {
 	float rot;
 	bool rotating;
 	bool berek;
+	int offtime;
 };
 
 struct CommonResources {
@@ -21,6 +22,11 @@ struct CommonResources {
 
 		struct Player players[10];
 		int activeplayers;
+		int berek;
+
+		ALLEGRO_SAMPLE *musicsample;
+		ALLEGRO_SAMPLE_INSTANCE *music;
+
 };
 
 struct CommonResources* CreateGameData(struct Game *game);
