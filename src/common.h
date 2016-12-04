@@ -10,6 +10,7 @@ struct Player {
 	float x;
 	float y;
 	float rot;
+	bool rotating;
 	bool berek;
 };
 
@@ -19,6 +20,7 @@ struct CommonResources {
 		int buttons;
 
 		struct Player players[10];
+		int activeplayers;
 };
 
 struct CommonResources* CreateGameData(struct Game *game);

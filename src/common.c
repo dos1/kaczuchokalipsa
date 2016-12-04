@@ -29,7 +29,7 @@ struct CommonResources* CreateGameData(struct Game *game) {
 	struct CommonResources *data = calloc(1, sizeof(struct CommonResources));
 data->buttons = 0;
 libusb_context *ctx = NULL;
-
+data->activeplayers = 0;
 
 struct libusb_device_handle *handle = NULL;
 int ret;

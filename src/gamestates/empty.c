@@ -92,7 +92,7 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	if (data->out) {
 		if (data->outy > 150) {
 			if (data->starting) {
-				SwitchCurrentGamestate(game, "dosowisko");
+				SwitchCurrentGamestate(game, "players");
 			} else {
 				UnloadAllGamestates(game);
 			}
@@ -278,6 +278,9 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	    )) {
 
 		if ((!data->starting) && (!data->out)) {
+
+			game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].active = true;
+
 data->starting = true;
       data->out = true;
 Gamestate_Stop(game, data);
