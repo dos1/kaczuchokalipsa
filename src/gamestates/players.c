@@ -307,6 +307,7 @@ al_draw_rotated_bitmap(bmp, al_get_bitmap_width(bmp)/2, al_get_bitmap_height(bmp
 char a[10];
 snprintf(&a, 10, "%d", i+1);
 
+DrawTextWithShadow(data->font, al_map_rgb(0,0,255), 605, 455, ALLEGRO_ALIGN_CENTER, a);
 DrawTextWithShadow(data->font, game->data->players[i].rotating ? al_map_rgb(200,255,200) : al_map_rgb(255,255,255), 600, 450, ALLEGRO_ALIGN_CENTER, a);
 
 al_set_target_backbuffer(game->display);
