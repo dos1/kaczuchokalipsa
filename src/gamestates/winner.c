@@ -76,8 +76,8 @@ data->counter++;
 void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	// Called as soon as possible, but no sooner than next Gamestate_Logic call.
 	// Draw everything to the screen here.
-
-	al_clear_to_color(al_map_rgb(65,54,92));
+al_set_target_bitmap(game->data->winbitmap);
+  al_clear_to_color(al_map_rgb(65,54,92));
 
 	al_draw_scaled_rotated_bitmap(data->duck, al_get_bitmap_width(data->duck)/2, al_get_bitmap_height(data->duck)/2,
 	                              game->viewport.width*0.02, game->viewport.height*0.65 - (fabs(sin((data->counter+2)/16.0)) * game->viewport.height*0.06),
@@ -89,8 +89,8 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 
 			DrawTextWithShadow(data->scorefont, al_map_rgb(255,255,255), game->viewport.width*0.7, game->viewport.height*0.2, ALLEGRO_ALIGN_CENTER, timeleft);
 
-
-	PrintConsole(game, "WINNER %d", game->data->berek);
+al_set_target_backbuffer(game->display);
+al_draw_bitmap(game->data->winbitmap, 0, 0, 0);
 
 }
 
@@ -103,7 +103,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			  // When there are no active gamestates, the engine will quit.
 	}
 	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_TILDE)) { return; }
-if (((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN)) || (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (data->counter > 3*60)) {
+if ((((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_TOUCH_BEGIN) || (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN)) || (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)) && (data->counter > 3*60)) {
 	StopCurrentGamestate(game);
 	StartGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
 }
@@ -154,6 +154,8 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
+	PrintConsole(game, "WINNER %d", game->data->berek);
+
 	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
 	data->counter=0;
 	al_play_sample_instance(data->music);

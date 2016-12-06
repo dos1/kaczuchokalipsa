@@ -32,6 +32,9 @@ struct CommonResources* CreateGameData(struct Game *game) {
 data->buttons = 0;
 data->activeplayers = 0;
 data->firsttime = true;
+
+data->winbitmap = al_create_bitmap(game->viewport.width, game->viewport.height);
+
 #ifdef WITH_USBBUTTON
 libusb_context *ctx = NULL;
 struct libusb_device_handle *handle = NULL;

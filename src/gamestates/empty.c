@@ -260,6 +260,10 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 
 	al_draw_filled_rectangle(0,  game->viewport.height*data->transy/100.0, game->viewport.width, game->viewport.height, !game->data->firsttime ? al_map_rgb(65,54,92) : al_map_rgb(0,0,0));
 
+	if (!game->data->firsttime) {
+		al_draw_bitmap_region(game->data->winbitmap, 0, fmax(0, game->viewport.height*data->transy/100.0), game->viewport.width, game->viewport.height, 0,  fmax(0, game->viewport.height*data->transy/100.0), 0);
+	}
+
 	if (data->out) {
 		al_draw_filled_rectangle(0,  0, game->viewport.width, game->viewport.height*data->outy/100.0, data->starting ? al_map_rgb(65,54,92) : al_map_rgb(0,0,0));
 	}
@@ -324,9 +328,11 @@ if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_F
 	al_set_display_flag(game->display, ALLEGRO_FULLSCREEN_WINDOW, game->config.fullscreen);
 	SetupViewport(game, game->viewport_config);
 	PrintConsole(game, "Fullscreen toggled");
+	al_destroy_bitmap(game->data->winbitmap);
+	game->data->winbitmap = al_create_bitmap(game->viewport.width, game->viewport.height);
 return;}
 
-  if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN) || (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)) {
+  if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN) || (ev->type==ALLEGRO_EVENT_TOUCH_BEGIN) ||  (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)) {
 
 		if ((!data->starting) && (!data->out)) {
 

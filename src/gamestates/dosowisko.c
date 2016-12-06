@@ -68,7 +68,11 @@ bool FadeOut(struct Game *game, struct TM_Action *action, enum TM_ActionState st
 
 bool End(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
 	if (state == TM_ACTIONSTATE_RUNNING) {
+		LoadGamestate(game, "empty");
+		LoadGamestate(game, "players");
+		LoadGamestate(game, "winner");
 		SwitchCurrentGamestate(game, NEXT_GAMESTATE);
+
 	}
 	return true;
 }
@@ -206,7 +210,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 
 void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {
 	TM_HandleEvent(data->timeline, ev);
-	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
+	if (((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
 	   ( (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_1) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_2) ||
@@ -218,7 +222,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	     (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_9) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_0)
-	    )) {
+	    )) || (ev->type==ALLEGRO_EVENT_TOUCH_BEGIN)) {
 		LoadGamestate(game, "empty");
 		LoadGamestate(game, "players");
 		LoadGamestate(game, "winner");

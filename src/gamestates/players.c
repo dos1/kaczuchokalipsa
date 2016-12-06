@@ -275,7 +275,6 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	// Called as soon as possible, but no sooner than next Gamestate_Logic call.
 	// Draw everything to the screen here.
 al_clear_to_color(al_map_rgb(65,54,92));
-
 char timeleft[10];
 
 if (!data->started) {
@@ -363,7 +362,8 @@ al_draw_scaled_rotated_bitmap(data->player, al_get_bitmap_width(data->kaczka)/2,
 if (!data->crowntaken) {
 	al_draw_scaled_rotated_bitmap(data->crown, al_get_bitmap_width(data->crown)/2, al_get_bitmap_height(data->crown)/2,
 	                              game->viewport.width / 2, game->viewport.height / 2,
-	                              0.2, 0.2, 0, 0);
+	                              (game->viewport.width*0.03625)/(float)al_get_bitmap_width(data->crown), (game->viewport.height*0.04055555*3.5)/(float)al_get_bitmap_height(data->player),
+	                              0, 0);
 }
 
 }
@@ -492,14 +492,32 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	pressplayer(game, data, player);
 
 	}
+	if (ev->type==ALLEGRO_EVENT_TOUCH_BEGIN) {
 
+		int player = -1;
+		for (int i=0; i<game->data->activeplayers; i++) {
+			if ((game->data->players[i].device == NULL) && (game->data->players[i].keycode == 0)) {
+				player = i;
+				break;
+			}
+		}
+
+		if (player==-1) {
+			if (data->started) return;
+			player = game->data->activeplayers++;
+			game->data->players[player].device = NULL;
+			game->data->players[player].keycode = 0;
+		}
+	pressplayer(game, data, player);
+
+	}
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	// Called once, when the gamestate library is being loaded.
 	// Good place for allocating memory, loading bitmaps etc.
 	struct GamestateResources *data = malloc(sizeof(struct GamestateResources));
-	data->font = al_load_font(GetDataFilePath(game, "fonts/DejaVuSansMono.ttf"), game->viewport.height*0.2, 0);
+	data->font = al_load_font(GetDataFilePath(game, "fonts/DejaVuSansMono.ttf"), 1800*0.2, 0);
 
 	data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
 	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
@@ -543,9 +561,10 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
-	data->font = al_load_font(GetDataFilePath(game, "fonts/DejaVuSansMono.ttf"), game->viewport.height*0.2, 0);
-
-	data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
+	al_set_target_bitmap(game->data->winbitmap);
+	  al_clear_to_color(al_map_rgb(65,54,92));
+al_set_target_backbuffer(game->display);
+  data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
 	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
 
 	game->data->activeplayers = 0;

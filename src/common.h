@@ -29,6 +29,8 @@ struct CommonResources {
 		int activeplayers;
 		int berek;
 
+		ALLEGRO_BITMAP *winbitmap;
+
 		ALLEGRO_SAMPLE *musicsample;
 		ALLEGRO_SAMPLE_INSTANCE *music;
 
