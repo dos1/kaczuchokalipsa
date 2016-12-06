@@ -27,12 +27,6 @@ extern "C" {
 typedef struct json_object json_object;
 typedef struct ulboard ulboard;
 
-bool isUSBButtonConfig(json_object *jobj, ulboard* board);
-bool validateUSBButtonData(json_object* jobj, ulboard* board);
-bool validateUSBButtonRowData(json_object* entries, const char* rowStr, bool curResult);
-
-bool updateUSBButton(json_object* bcfg, ulboard* board);
-void populateUSBKeys(json_object* keys, int row, unsigned char* barray);
 void populateBlankKeys(int row, unsigned char* barray);
 bool randomButtonColor (unsigned char* barray, int r, int g, int b, int id);
 bool writeUSBButton(unsigned char* barray, int autoconnect, bool transfer);

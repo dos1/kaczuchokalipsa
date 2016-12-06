@@ -120,8 +120,8 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 		al_set_target_bitmap(data->bitmap);
 		al_clear_to_color(al_map_rgba(0,0,0,0));
 
-		al_draw_text(data->font, al_map_rgba(255,255,255,10), game->viewport.width/2,
-		             game->viewport.height*0.4167, ALLEGRO_ALIGN_CENTRE, t);
+		al_draw_text(data->font, al_map_rgba(255,255,255,10), 320/2,
+		             180*0.4167, ALLEGRO_ALIGN_CENTRE, t);
 
 		double tg = tan(-data->tan/384.0 * ALLEGRO_PI - ALLEGRO_PI/2);
 
@@ -142,7 +142,7 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 
 		al_set_target_backbuffer(game->display);
 
-		al_draw_bitmap(data->pixelator, 0, 0, 0);
+		al_draw_scaled_bitmap(data->pixelator, 0, 0, 320, 180, 0, 0, game->viewport.width, game->viewport.height, 0);
 
 	}
 }
@@ -170,6 +170,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 
 
 
+#ifdef WITH_USBBUTTON
 
 	for (int i=0; i<game->data->buttons; i++) {
 
@@ -199,7 +200,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	pos = 0;
 
 }
-
+#endif
 
 }
 
@@ -218,6 +219,9 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	     (ev->keyboard.keycode == ALLEGRO_KEY_9) ||
 	     (ev->keyboard.keycode == ALLEGRO_KEY_0)
 	    )) {
+		LoadGamestate(game, "empty");
+		LoadGamestate(game, "players");
+		LoadGamestate(game, "winner");
 		SwitchCurrentGamestate(game, SKIP_GAMESTATE);
 	}
 }
@@ -225,9 +229,9 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	struct GamestateResources *data = malloc(sizeof(struct GamestateResources));
 	data->timeline = TM_Init(game, "main");
-	data->bitmap = al_create_bitmap(game->viewport.width, game->viewport.height);
-	data->checkerboard = al_create_bitmap(game->viewport.width, game->viewport.height);
-	data->pixelator = al_create_bitmap(game->viewport.width, game->viewport.height);
+	data->bitmap = al_create_bitmap(320, 180);
+	data->checkerboard = al_create_bitmap(320, 180);
+	data->pixelator = al_create_bitmap(320, 180);
 
 	al_set_target_bitmap(data->checkerboard);
 	al_lock_bitmap(data->checkerboard, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
@@ -245,7 +249,7 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	(*progress)(game);
 
 	data->font = al_load_ttf_font(GetDataFilePath(game, "fonts/DejaVuSansMono.ttf"),
-	                              (int)(game->viewport.height*0.1666 / 8) * 8 ,0 );
+	                              (int)(180*0.1666 / 8) * 8 ,0 );
 	(*progress)(game);
 	data->sample = al_load_sample( GetDataFilePath(game, "dosowisko.flac") );
 	data->sound = al_create_sample_instance(data->sample);
@@ -273,6 +277,7 @@ void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	al_stop_sample_instance(data->kbd);
 	al_stop_sample_instance(data->key);
 
+#ifdef WITH_USBBUTTON
 
 	for (int i=0; i<game->data->buttons; i++) {
 
@@ -302,6 +307,7 @@ void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	pos = 0;
 
 }
+#endif
 }
 
 void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {

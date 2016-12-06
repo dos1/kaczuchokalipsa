@@ -1,9 +1,10 @@
 #define LIBSUPERDERPY_DATA_TYPE struct CommonResources
 #include <libsuperderpy.h>
+#ifdef WITH_USBBUTTON
 #include "libs/common.h"
 #include "libs/ulboard.h"
 #include <libusb.h>
-#include <json.h>
+#endif
 
 struct Player {
 	bool active;
@@ -13,14 +14,18 @@ struct Player {
 	bool rotating;
 	bool berek;
 	int offtime;
+
+	int keycode;
+	ALLEGRO_JOYSTICK *device;
 };
 
 struct CommonResources {
 		// Fill in with common data accessible from all gamestates.
 		struct libusb_device_handle *handle[10];
 		int buttons;
+		bool firsttime;
 
-		struct Player players[10];
+		struct Player players[1024];
 		int activeplayers;
 		int berek;
 
@@ -31,13 +36,6 @@ struct CommonResources {
 
 struct CommonResources* CreateGameData(struct Game *game);
 void DestroyGameData(struct Game *game, struct CommonResources *data);
-struct libusb_device_handle* openUSB(libusb_context *ctx, uint16_t vendor, uint16_t product, int interface, int autoconnect, int id);
-void closeUSB(libusb_context *ctx, struct libusb_device_handle *handle, int interface);
-
-bool writeUSBButton(unsigned char* barray, int autoconnect, bool transfer);
-bool validateUSBButtonData(json_object* jobj, ulboard* board);
-bool validateUSBButtonRowData(json_object* entries, const char* rowStr, bool curResult);
-void populateUSBKeys(json_object* keys, int row, unsigned char* barray);
 
 #define USBBTN_VENDOR  0xD209
 #define USBBTN_PRODUCT 0x1200

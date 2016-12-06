@@ -20,17 +20,20 @@
  */
 
 #include "common.h"
-#include "libs/ulboard.h"
 #include "strings.h"
+#ifdef WANT_USBBUTTON
+#include "libs/ulboard.h"
 #include "libs/common.h"
+#endif
 #include <libsuperderpy.h>
 
 struct CommonResources* CreateGameData(struct Game *game) {
 	struct CommonResources *data = calloc(1, sizeof(struct CommonResources));
 data->buttons = 0;
-libusb_context *ctx = NULL;
 data->activeplayers = 0;
-
+data->firsttime = true;
+#ifdef WITH_USBBUTTON
+libusb_context *ctx = NULL;
 struct libusb_device_handle *handle = NULL;
 int ret;
 /* Open USB communication */
@@ -61,10 +64,10 @@ for (size_t idx = 0; idx < count; ++idx) {
 
 
 
-
   for (int i=0; i<data->buttons; i++) {
 		data->handle[i] = openUSB(ctx, USBBTN_VENDOR, USBBTN_PRODUCT, USBBTN_INTERFACE, true, i);
 	}
+#endif
 
 
 	data->musicsample = al_load_sample( GetDataFilePath(game, "music.wav") );

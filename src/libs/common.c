@@ -10,7 +10,6 @@
 
 /* C */
 #include <stdio.h>
-#include <json.h>
 #include <libusb.h>
 
 #include "common.h"
@@ -113,36 +112,6 @@ closeUSB(libusb_context *ctx, struct libusb_device_handle *handle, int interface
 	if (ctx)
 		libusb_exit(ctx);
 
-}
-
-bool checkBoardID(json_object* jobj, const char* entry)
-{
-	bool valid = false;
-	int id = -1;
-
-	json_object* tmp = NULL;
-
-	if (json_object_object_get_ex(jobj, entry, &tmp))
-	{
-		if (json_object_get_type(tmp) == json_type_int)
-		{
-			id = json_object_get_int(tmp);
-			if (id > 0 && id < 5)
-			{
-	valid = true;
-			}
-			else
-			{
-	log_err ("'%s' is not a valid entry.  Valid entries are 1 - 4", entry);
-			}
-		}
-		else
-		{
-			log_err ("'%s' is not defined as an integer", entry);
-		}
-	}
-
-	return valid;
 }
 
 char convertDecimalToHex(int decimal)

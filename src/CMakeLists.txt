@@ -17,19 +17,26 @@ if (APPLE)
 	   MACOSX_PACKAGE_LOCATION "Resources")
    endif(APPLE)
 
+if (WANT_USBBUTTON)
 find_package(libusb REQUIRED)
 include_directories(${LIBUSB_1_INCLUDE_DIR})
+add_definitions(-DWITH_USBBUTTON=1)
 
-find_package(json-c REQUIRED)
-include_directories(${JSON-C_INCLUDE_DIR})
+set(USBBUTTON_FILES "libs/common.c" "libs/ulboard.c" "libs/usbbutton.c" "libs/ipacseries.c")
+else(WANT_USBBUTTON)
+    set(USBBUTTON_FILES "")
+endif()
 
 add_libsuperderpy_target(${EXECUTABLE_SRC_LIST})
-target_link_libraries(${EXECUTABLE} libsuperderpy "libsuperderpy-${LIBSUPERDERPY_GAMENAME}" ${LIBUSB_1_LIBRARIES} ${JSON-C_LIBRARIES})
+target_link_libraries(${EXECUTABLE} libsuperderpy "libsuperderpy-${LIBSUPERDERPY_GAMENAME}")
+#target_link_libraries(${EXECUTABLE} ${LIBUSB_1_LIBRARIES} ${JSON-C_LIBRARIES})
 install(TARGETS ${EXECUTABLE} DESTINATION ${BIN_INSTALL_DIR})
 
-add_library("libsuperderpy-${LIBSUPERDERPY_GAMENAME}" SHARED "common.c" "libs/common.c" "libs/ulboard.c" "libs/usbbutton.c" "libs/ipacseries.c")
+
+add_library("libsuperderpy-${LIBSUPERDERPY_GAMENAME}" SHARED "common.c" ${USBBUTTON_FILES})
 set_target_properties("libsuperderpy-${LIBSUPERDERPY_GAMENAME}" PROPERTIES PREFIX "")
-target_link_libraries("libsuperderpy-${LIBSUPERDERPY_GAMENAME}" ${ALLEGRO5_LIBRARIES} ${ALLEGRO5_FONT_LIBRARIES} ${ALLEGRO5_TTF_LIBRARIES} ${ALLEGRO5_PRIMITIVES_LIBRARIES} ${ALLEGRO5_AUDIO_LIBRARIES} ${ALLEGRO5_ACODEC_LIBRARIES} ${ALLEGRO5_IMAGE_LIBRARIES} ${ALLEGRO5_COLOR_LIBRARIES} ${LIBUSB_1_LIBRARIES} ${JSON-C_LIBRARIES} m libsuperderpy)
+target_link_libraries("libsuperderpy-${LIBSUPERDERPY_GAMENAME}" ${ALLEGRO5_LIBRARIES} ${ALLEGRO5_FONT_LIBRARIES} ${ALLEGRO5_TTF_LIBRARIES} ${ALLEGRO5_PRIMITIVES_LIBRARIES} ${ALLEGRO5_AUDIO_LIBRARIES} ${ALLEGRO5_ACODEC_LIBRARIES} ${ALLEGRO5_IMAGE_LIBRARIES} ${ALLEGRO5_COLOR_LIBRARIES} m libsuperderpy)
+target_link_libraries("libsuperderpy-${LIBSUPERDERPY_GAMENAME}" ${LIBUSB_1_LIBRARIES} ${JSON-C_LIBRARIES})
 install(TARGETS "libsuperderpy-${LIBSUPERDERPY_GAMENAME}" DESTINATION ${LIB_INSTALL_DIR})
 
 add_subdirectory("gamestates")

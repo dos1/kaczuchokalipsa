@@ -20,9 +20,11 @@
  */
 
 #include "../common.h"
-#include "../libs/ulboard.h"
 #include "strings.h"
+#ifdef WANT_USBBUTTON
+#include "../libs/ulboard.h"
 #include "../libs/common.h"
+#endif
 #include <libsuperderpy.h>
 
 struct Kaczucha;
@@ -63,6 +65,40 @@ struct GamestateResources {
 
 int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
 
+void buttonledstop(struct Game *game) {
+#ifdef WITH_USBBUTTON
+
+	for (int i=0; i<game->data->buttons; i++) {
+
+
+	unsigned char barray[USBBTN_SIZE];
+	randomButtonColor(&barray, 0, 0, 0, i);
+
+	unsigned char mesg[USBBTN_MESG_LENGTH] = {0,0,0,0};
+	int pos = 0;
+
+	while (pos < USBBTN_SIZE)
+	{
+		memcpy(&mesg[0], &barray[pos], 4);
+
+		libusb_control_transfer(game->data->handle[i],
+		                              UM_REQUEST_TYPE,
+		                              UM_REQUEST,
+		                              USBBTN_VALUE,
+		                              USBBTN_INTERFACE,
+		                              mesg,
+		                              USBBTN_MESG_LENGTH,
+		                              UM_TIMEOUT);
+
+		pos+=USBBTN_MESG_LENGTH;
+	}
+
+	pos = 0;
+
+}
+#endif
+}
+
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
 	AnimateCharacter(game, data->hashdash, 1);
@@ -93,7 +129,8 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	if (data->out) {
 		if (data->outy > 150) {
 			if (data->starting) {
-				SwitchCurrentGamestate(game, "players");
+				StopCurrentGamestate(game);
+				StartGamestate(game, "players");
 			} else {
 				UnloadAllGamestates(game);
 			}
@@ -107,6 +144,7 @@ data->counter++;
 if (!(data->out)) {
 
 if (data->blinker==60) {
+#ifdef WITH_USBBUTTON
 
 	for (int i=0; i<game->data->buttons; i++) {
 
@@ -142,6 +180,7 @@ if (data->blinker==60) {
 
 	pos = 0;
 	}
+#endif
 	data->current ++;
 	if (data->current >= game->data->buttons) {
 		data->current = 0;
@@ -159,7 +198,7 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	al_draw_scaled_bitmap(data->bg, 0, 0, al_get_bitmap_width(data->bg), al_get_bitmap_height(data->bg), 0, 0, game->viewport.width, game->viewport.height, 0);
 
 	al_draw_scaled_bitmap(data->logo, 0, 0, al_get_bitmap_width(data->logo), al_get_bitmap_height(data->logo),
-	                      (game->viewport.width - (game->viewport.width*0.926875))/2.0, game->viewport.height*0.08 + sin(data->counter/8.0) * 42, game->viewport.width*0.926875, game->viewport.height*0.156111, 0);
+	                      (game->viewport.width - (game->viewport.width*0.926875))/2.0, game->viewport.height*0.08 + (sin(data->counter/8.0) * game->viewport.height * 0.03), game->viewport.width*0.926875, game->viewport.height*0.156111, 0);
 
 	al_draw_scaled_rotated_bitmap(data->duck, al_get_bitmap_width(data->duck)/2, al_get_bitmap_height(data->duck)/2,
 	                              data->position*game->viewport.width*0.0025 + (4*game->viewport.width/4.0), game->viewport.height*0.65 - (fabs(sin((data->counter+2)/16.0)) * game->viewport.height*0.06),
@@ -207,17 +246,22 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	                              sin(data->counter/16.0)/4.0, 0);
 
 
-/*	al_draw_scaled_bitmap(data->circle, 0, 0, al_get_bitmap_width(data->circle), al_get_bitmap_height(data->circle),
-												0, game->viewport.height-game->viewport.height*0.247222,
-												game->viewport.width*0.1390625, game->viewport.height*0.247222, 0);
+	al_draw_scaled_bitmap(data->circle, 0, 0, al_get_bitmap_width(data->circle), al_get_bitmap_height(data->circle),
+	                      0, game->viewport.height-game->viewport.height*0.247222,
+	                      game->viewport.width*0.1390625, game->viewport.height*0.247222, 0);
 
-	DrawCharacter(game, data->hashdash, al_map_rgba(255,255,255,255), 0);
-*/
+/*	al_draw_scaled_bitmap(data->hashdash->bitmap, 0, 0, al_get_bitmap_width(data->hashdash->bitmap), al_get_bitmap_height(data->hashdash->bitmap),
+												0, 0,
+												0.06*game->viewport.width, 0.10666*game->viewport.height, 0);
 
-	al_draw_filled_rectangle(0,  game->viewport.height*data->transy/100.0, game->viewport.width, game->viewport.height, al_map_rgb(0,0,0));
+*/	DrawScaledCharacter(game, data->hashdash, al_map_rgba(255,255,255,255),
+	                    (game->viewport.width*0.06)/192.0, (game->viewport.height*0.10666)/192.0,
+	                    0);
+
+	al_draw_filled_rectangle(0,  game->viewport.height*data->transy/100.0, game->viewport.width, game->viewport.height, !game->data->firsttime ? al_map_rgb(65,54,92) : al_map_rgb(0,0,0));
 
 	if (data->out) {
-		al_draw_filled_rectangle(0,  0, game->viewport.width, game->viewport.height*data->outy/100.0, al_map_rgb(0,0,0));
+		al_draw_filled_rectangle(0,  0, game->viewport.width, game->viewport.height*data->outy/100.0, data->starting ? al_map_rgb(65,54,92) : al_map_rgb(0,0,0));
 	}
 
 	for (int i=0; i<ILOSCKACZUCHUF; i++) {
@@ -235,17 +279,19 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {
 	// Called for each event in Allegro event queue.
 	// Here you can handle user input, expiring timers etc.
+	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_TILDE)) { return; }
 	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE)) {
 		if (!data->starting) {
 		if (data->out) {
 			UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
 		} else {
+			al_stop_sample_instance(data->music);
 			al_play_sample_instance(data->music);
 			data->out = true;
-			Gamestate_Stop(game, data);
+			buttonledstop(game);
 
 			for (int i=0; i<ILOSCKACZUCHUF; i++) {
-				if (data->kaczuchy[i].y > 110) {
+				if ((data->kaczuchy[i].y > 110) || (rand() % 4 == 0)) {
 					data->kaczuchy[i].x = rand() % 101;
 					data->kaczuchy[i].y = rand() % 31 - 15;
 					data->kaczuchy[i].dx = rand() % 4 - 2;
@@ -263,6 +309,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		}
 		}
 		// When there are no active gamestates, the engine will quit.
+		return;
 	}
 
 if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_F)) {
@@ -276,30 +323,22 @@ if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_F
 	}
 	al_set_display_flag(game->display, ALLEGRO_FULLSCREEN_WINDOW, game->config.fullscreen);
 	SetupViewport(game, game->viewport_config);
-	PrintConsole(game, "Fullscreen toggled");}
+	PrintConsole(game, "Fullscreen toggled");
+return;}
 
-  if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
-	   ( (ev->keyboard.keycode == ALLEGRO_KEY_1) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_2) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_3) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_4) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_5) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_6) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_7) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_9)
-	    )) {
+  if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN) || (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)) {
 
 		if ((!data->starting) && (!data->out)) {
 
 			//			game->data->berek = ev->keyboard.keycode - ALLEGRO_KEY_1;
+			al_stop_sample_instance(data->music);
 			al_play_sample_instance(data->music);
 
 data->starting = true;
       data->out = true;
-Gamestate_Stop(game, data);
+buttonledstop(game);
       for (int i=0; i<ILOSCKACZUCHUF; i++) {
-				if (data->kaczuchy[i].y > 110) {
+				if ((data->kaczuchy[i].y > 110) || (rand() % 4 == 0)) {
 					data->kaczuchy[i].x = rand() % 101;
 					data->kaczuchy[i].y = rand() % 31 - 15;
 					data->kaczuchy[i].dx = rand() % 4 - 2;
@@ -392,6 +431,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	data->current = 0;
 
 
+#ifdef WITH_USBBUTTON
 
 	for (int i=0; i<game->data->buttons; i++) {
 
@@ -421,41 +461,14 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	pos = 0;
 
 }
+#endif
 
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	// Called when gamestate gets stopped. Stop timers, music etc. here.
-
-	for (int i=0; i<game->data->buttons; i++) {
-
-
-	unsigned char barray[USBBTN_SIZE];
-	randomButtonColor(&barray, 0, 0, 0, i);
-
-	unsigned char mesg[USBBTN_MESG_LENGTH] = {0,0,0,0};
-	int pos = 0;
-
-	while (pos < USBBTN_SIZE)
-	{
-		memcpy(&mesg[0], &barray[pos], 4);
-
-		libusb_control_transfer(game->data->handle[i],
-		                              UM_REQUEST_TYPE,
-		                              UM_REQUEST,
-		                              USBBTN_VALUE,
-		                              USBBTN_INTERFACE,
-		                              mesg,
-		                              USBBTN_MESG_LENGTH,
-		                              UM_TIMEOUT);
-
-		pos+=USBBTN_MESG_LENGTH;
-	}
-
-	pos = 0;
-
-}
-
+	game->data->firsttime = false;
+	buttonledstop(game);
 }
 
 void Gamestate_Pause(struct Game *game, struct GamestateResources* data) {

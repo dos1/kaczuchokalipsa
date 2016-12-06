@@ -20,9 +20,11 @@
  */
 
 #include "../common.h"
-#include "../libs/ulboard.h"
 #include "strings.h"
+#ifdef WANT_USBBUTTON
+#include "../libs/ulboard.h"
 #include "../libs/common.h"
+#endif
 #include <libsuperderpy.h>
 
 struct Kaczucha;
@@ -96,27 +98,31 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	// Called for each event in Allegro event queue.
 	// Here you can handle user input, expiring timers etc.
 	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE)) {
-
-		  SwitchCurrentGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
+		  StopCurrentGamestate(game);
+			StartGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
 			  // When there are no active gamestates, the engine will quit.
 	}
-
-
+	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_TILDE)) { return; }
+if (((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN)) || (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (data->counter > 3*60)) {
+	StopCurrentGamestate(game);
+	StartGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
+}
+/*
 	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
-	   ( (ev->keyboard.keycode == ALLEGRO_KEY_1) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_2) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_3) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_4) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_5) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_6) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_7) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_9)
-	    )) {
+		 ( (ev->keyboard.keycode == ALLEGRO_KEY_1) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_2) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_3) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_4) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_5) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_6) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_7) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
+			 (ev->keyboard.keycode == ALLEGRO_KEY_9)
+			)) {
 
 		SwitchCurrentGamestate(game, "empty");
 	}
-
+*/
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
@@ -148,7 +154,10 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
+	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
+	data->counter=0;
 	al_play_sample_instance(data->music);
+#ifdef WITH_USBBUTTON
 
 	for (int i=0; i<game->data->buttons; i++) {
 
@@ -183,12 +192,15 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	pos = 0;
 
 }
+#endif
 	data->blinker=0;
 
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	// Called when gamestate gets stopped. Stop timers, music etc. here.
+#ifdef WITH_USBBUTTON
+
 	for (int i=0; i<game->data->buttons; i++) {
 
 
@@ -217,7 +229,7 @@ void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	pos = 0;
 
 }
-
+#endif
 }
 
 void Gamestate_Pause(struct Game *game, struct GamestateResources* data) {

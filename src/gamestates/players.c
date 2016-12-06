@@ -20,11 +20,13 @@
  */
 
 #include "../common.h"
-#include "../libs/ulboard.h"
 #include "strings.h"
 #include "math.h"
 #include <stdio.h>
+#ifdef WANT_USBBUTTON
+#include "../libs/ulboard.h"
 #include "../libs/common.h"
+#endif
 #include <libsuperderpy.h>
 
 
@@ -33,7 +35,7 @@
 struct GamestateResources {
 		// This struct is for every resource allocated and used by your gamestate.
 		// It gets created on load and then gets passed around to all other function calls.
-		ALLEGRO_FONT *font, *scorefont;
+		ALLEGRO_FONT *font, *scorefont, *font2;
 		int blink_counter;
 		int count;
 		int counter;
@@ -45,7 +47,11 @@ struct GamestateResources {
 		ALLEGRO_SAMPLE *bamsample;
 		ALLEGRO_SAMPLE_INSTANCE *bam;
 
-		bool someone;
+		ALLEGRO_SAMPLE *kliksample;
+		ALLEGRO_SAMPLE_INSTANCE *klik;
+		ALLEGRO_SAMPLE *kwasample;
+		ALLEGRO_SAMPLE_INSTANCE *kwa;
+
 
 		int timer;
 
@@ -57,7 +63,7 @@ int Gamestate_ProgressCount = 1; // number of loading steps as reported by Games
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
 data->counter++;
-  for (int i=0; i<10; i++) {
+  for (int i=0; i<game->data->activeplayers; i++) {
 		if (!game->data->players[i].active) {
 			continue;
 		}
@@ -86,34 +92,43 @@ if (data->started) {
 	if (data->count%60==0) {
 		if (!data->started) {
 			data->started = data->starttimer==0;
+			if (data->started) {
+				al_play_sample_instance(data->klik);
+				al_play_sample_instance(data->kwa);
+			}
 		if (data->starttimer==0) {
 			data->timer = 60;
 			data->crowntaken=false;
 
 		} else {
-			if (data->someone) {
+			if (game->data->activeplayers>1) {
 			data->starttimer--;
+			al_play_sample_instance(data->klik);
+
 			}
 		}
 		} else {
 			data->timer--;
 		}
-
-		if (data->timer==0) {
-			SwitchCurrentGamestate(game, "winner");
+if (data->timer<=5) {
+	al_play_sample_instance(data->klik);
+}
+    if (data->timer==-1) {
+			StopCurrentGamestate(game);
+			StartGamestate(game, "winner");
 		}
 }
 
-	for (int i=0; i<game->data->buttons; i++) {
+	for (int i=0; i<game->data->activeplayers; i++) {
 		if (game->data->players[i].offtime) game->data->players[i].offtime--;
 	}
 
 	if (data->count%25==0) {
 
-		for (int i=0; i<10; i++) {
+		for (int i=0; i<game->data->activeplayers; i++) {
 int wrog = -1;
       float d = 200;
-			for (int j=0; j<10; j++) {
+			for (int j=0; j<game->data->activeplayers; j++) {
 				if (i==j) continue;
 				if (!game->data->players[i].active) continue;
 				if (!game->data->players[j].active) continue;
@@ -189,6 +204,7 @@ if (game->data->players[i].active) {
 			game->data->players[i].berek = true;
 			game->data->berek = i;
 			data->crowntaken = true;
+			al_play_sample_instance(data->bam);
 		}
 	}
 }
@@ -199,6 +215,7 @@ if (!game->data->players[wrog].offtime) {
 		game->data->players[i].berek = false;
 		game->data->players[wrog].berek = true;
 		game->data->berek = wrog;
+		al_stop_sample_instance(data->bam);
 		al_play_sample_instance(data->bam);
 
 	}
@@ -212,6 +229,7 @@ val-=32;
 if (val<0) val=0;
 val*=8;
 //PrintConsole(game, "d: %f; led: %d", d, val);
+#ifdef WITH_USBBUTTON
 
 if  (i<game->data->buttons) {
 
@@ -247,6 +265,7 @@ if  (i<game->data->buttons) {
 		pos = 0;
 
   }
+#endif
 		}
 	}
 	data->count++;
@@ -260,14 +279,17 @@ al_clear_to_color(al_map_rgb(65,54,92));
 char timeleft[10];
 
 if (!data->started) {
+	DrawTextWithShadow(data->font2, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.18, ALLEGRO_ALIGN_CENTER, "press some button to join");
+if (game->data->activeplayers > 1) {
 	snprintf(&timeleft, 10, "%d", data->starttimer);
 DrawTextWithShadow(data->scorefont, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.2, ALLEGRO_ALIGN_CENTER, timeleft);
+}
 } else {
 	snprintf(&timeleft, 10, "%d", data->timer);
 DrawTextWithShadow(data->scorefont, al_map_rgb(255,255,255), game->viewport.width, game->viewport.height*0.5, ALLEGRO_ALIGN_RIGHT, timeleft);
 }
 
-for (int i=0; i<10; i++) {
+for (int i=0; i<game->data->activeplayers; i++) {
 	  if (!game->data->players[i].active) {
 			continue;
 		}
@@ -279,10 +301,10 @@ al_draw_rotated_bitmap(bmp, al_get_bitmap_width(bmp)/2, al_get_bitmap_height(bmp
                        600, 600,
                        sin(data->counter/16.0)/4.0, 0);
 
-char a[2] = "1";
-a[0]+=i;
+char a[10];
+snprintf(&a, 10, "%d", i+1);
 
-DrawTextWithShadow(data->font, al_map_rgb(255,255,255), 600, 450, ALLEGRO_ALIGN_CENTER, a);
+DrawTextWithShadow(data->font, game->data->players[i].rotating ? al_map_rgb(200,255,200) : al_map_rgb(255,255,255), 600, 450, ALLEGRO_ALIGN_CENTER, a);
 
 al_set_target_backbuffer(game->display);
 
@@ -346,39 +368,27 @@ if (!data->crowntaken) {
 
 }
 
-void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {
-	// Called for each event in Allegro event queue.
-	// Here you can handle user input, expiring timers etc.
-	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE)) {
-		  SwitchCurrentGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
-		// When there are no active gamestates, the engine will quit.
-	}
+void pressplayer(struct Game *game, struct GamestateResources* data, int i) {
+	if (!game->data->players[i].active) {
+		if (data->starttimer) { data->starttimer = 5; data->count = 1; 			al_play_sample_instance(data->klik);
+}
 
+		game->data->players[i].rot = rand() % 100;
+		game->data->players[i].rotating = false;
+		game->data->players[i].berek = false;
+		game->data->players[i].offtime = 0;
 
-
-	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) &&
-	   ( (ev->keyboard.keycode == ALLEGRO_KEY_1) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_2) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_3) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_4) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_5) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_6) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_7) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_8) ||
-	     (ev->keyboard.keycode == ALLEGRO_KEY_9)
-	    )) {
-	if (!game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].active) {
-		data->someone = true;
-		if (data->starttimer) { data->starttimer = 5; }
-		  game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].active = true;
+		  game->data->players[i].active = true;
 			if (rand()%2) {
-				game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].x = 8 * (rand()%2 ? 1 : -1);
+				game->data->players[i].x = 8 * (rand()%2 ? 1 : -1);
+				game->data->players[i].y = rand()%99 + 1;
 			} else {
-				game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].y = 8 * (rand()%2 ? 1 : -1);
+				game->data->players[i].y = 8 * (rand()%2 ? 1 : -1);
+				game->data->players[i].x = rand()%99 + 1;
 			}
 	} else {
-		game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].rotating = !game->data->players[ev->keyboard.keycode - ALLEGRO_KEY_1].rotating;
-		int i = ev->keyboard.keycode - ALLEGRO_KEY_1;
+		game->data->players[i].rotating = !game->data->players[i].rotating;
+#ifdef WITH_USBBUTTON
 
 		if (i<game->data->buttons) {
 
@@ -407,8 +417,80 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 
 		pos = 0;
 }
+#endif
+	}
+}
+
+void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {
+	// Called for each event in Allegro event queue.
+	// Here you can handle user input, expiring timers etc.
+	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE)) {
+		StopCurrentGamestate(game);
+		  StartGamestate(game, "empty"); // mark this gamestate to be stopped and unloaded
+		// When there are no active gamestates, the engine will quit.
+			return;
+	}
+
+	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_TILDE)) { return; }
+
+	if (ev->type==ALLEGRO_EVENT_KEY_DOWN) {
+
+		int player = -1;
+		for (int i=0; i<game->data->activeplayers; i++) {
+			if ((game->data->players[i].device == NULL) && (game->data->players[i].keycode == ev->keyboard.keycode)) {
+				player = i;
+				break;
+			}
+		}
+
+		if (player==-1) {
+			if (data->started) return;
+			player = game->data->activeplayers++;
+			game->data->players[player].device = NULL;
+			game->data->players[player].keycode = ev->keyboard.keycode;
+		}
+	pressplayer(game, data, player);
 
 	}
+
+	if (ev->type==ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN) {
+
+		int player = -1;
+		for (int i=0; i<game->data->activeplayers; i++) {
+			if ((game->data->players[i].device == ev->joystick.id) && (game->data->players[i].keycode == ev->joystick.button)) {
+				player = i;
+				break;
+			}
+		}
+
+		if (player==-1) {
+			if (data->started) return;
+			player = game->data->activeplayers++;
+			game->data->players[player].device = ev->joystick.id;
+			game->data->players[player].keycode = ev->joystick.button;
+		}
+	pressplayer(game, data, player);
+
+	}
+
+	if (ev->type==ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+
+		int player = -1;
+		for (int i=0; i<game->data->activeplayers; i++) {
+			if ((game->data->players[i].device == NULL) && (game->data->players[i].keycode == -ev->mouse.button)) {
+				player = i;
+				break;
+			}
+		}
+
+		if (player==-1) {
+			if (data->started) return;
+			player = game->data->activeplayers++;
+			game->data->players[player].device = NULL;
+			game->data->players[player].keycode = -ev->mouse.button;
+		}
+	pressplayer(game, data, player);
+
 	}
 
 }
@@ -419,6 +501,7 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	struct GamestateResources *data = malloc(sizeof(struct GamestateResources));
 	data->font = al_load_font(GetDataFilePath(game, "fonts/DejaVuSansMono.ttf"), game->viewport.height*0.2, 0);
 
+	data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
 	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
 
 
@@ -435,6 +518,16 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	al_attach_sample_instance_to_mixer(data->bam, game->audio.fx);
 	al_set_sample_instance_playmode(data->bam, ALLEGRO_PLAYMODE_ONCE);
 
+	data->kwasample = al_load_sample( GetDataFilePath(game, "start.wav") );
+	data->kwa = al_create_sample_instance(data->kwasample);
+	al_attach_sample_instance_to_mixer(data->kwa, game->audio.fx);
+	al_set_sample_instance_playmode(data->kwa, ALLEGRO_PLAYMODE_ONCE);
+
+	data->kliksample = al_load_sample( GetDataFilePath(game, "klik.wav") );
+	data->klik = al_create_sample_instance(data->kliksample);
+	al_attach_sample_instance_to_mixer(data->klik, game->audio.fx);
+	al_set_sample_instance_playmode(data->klik, ALLEGRO_PLAYMODE_ONCE);
+
 
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
 	return data;
@@ -450,24 +543,24 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
+	data->font = al_load_font(GetDataFilePath(game, "fonts/DejaVuSansMono.ttf"), game->viewport.height*0.2, 0);
+
+	data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
+	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
+
+	game->data->activeplayers = 0;
 	data->blink_counter = 0;
 data->counter=0;
-data->someone = false;
 data->crowntaken=true;
 data->starttimer = 5;
 data->started= false;
-  for (int i=0; i<10; i++) {
-		game->data->players[i].rot = rand() % 100;
-		game->data->players[i].x = rand() % 100;
-		game->data->players[i].y = rand() % 100;
-		game->data->players[i].rotating = false;
-	}
 
-	data->timer = 60;
+  data->timer = 60;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	// Called when gamestate gets stopped. Stop timers, music etc. here.
+#ifdef WITH_USBBUTTON
 
 	for (int i=0; i<game->data->buttons; i++) {
 
@@ -497,7 +590,7 @@ void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
 	pos = 0;
 
 }
-
+#endif
 }
 
 void Gamestate_Pause(struct Game *game, struct GamestateResources* data) {
