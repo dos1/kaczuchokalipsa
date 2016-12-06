@@ -113,7 +113,7 @@ if (data->started) {
 if (data->timer<=5) {
 	al_play_sample_instance(data->klik);
 }
-    if (data->timer==-1) {
+    if ((data->timer<0) && (data->crowntaken)) {
 			StopCurrentGamestate(game);
 			StartGamestate(game, "winner");
 		}
@@ -284,8 +284,12 @@ if (game->data->activeplayers > 1) {
 DrawTextWithShadow(data->scorefont, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.2, ALLEGRO_ALIGN_CENTER, timeleft);
 }
 } else {
+	if (data->timer>=0) {
 	snprintf(&timeleft, 10, "%d", data->timer);
 DrawTextWithShadow(data->scorefont, al_map_rgb(255,255,255), game->viewport.width, game->viewport.height*0.5, ALLEGRO_ALIGN_RIGHT, timeleft);
+	} else {
+		DrawTextWithShadow(data->scorefont, al_map_rgb(255,128,32), game->viewport.width, game->viewport.height*0.5, ALLEGRO_ALIGN_RIGHT, "0");
+	}
 }
 
 for (int i=0; i<game->data->activeplayers; i++) {
