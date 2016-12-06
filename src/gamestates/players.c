@@ -511,6 +511,14 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	pressplayer(game, data, player);
 
 	}
+
+	if (ev->type == ALLEGRO_EVENT_DISPLAY_RESIZE) {
+		al_destroy_font(data->font2);
+		al_destroy_font(data->scorefont);
+		data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
+		data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
+	}
+
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
@@ -564,6 +572,8 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	al_set_target_bitmap(game->data->winbitmap);
 	  al_clear_to_color(al_map_rgb(65,54,92));
 al_set_target_backbuffer(game->display);
+al_destroy_font(data->font2);
+al_destroy_font(data->scorefont);
   data->font2 = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.1, 0);
 	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
 

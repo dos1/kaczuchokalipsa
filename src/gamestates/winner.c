@@ -123,6 +123,11 @@ if ((((ev->type==ALLEGRO_EVENT_KEY_DOWN) || (ev->type==ALLEGRO_EVENT_TOUCH_BEGIN
 		SwitchCurrentGamestate(game, "empty");
 	}
 */
+if (ev->type == ALLEGRO_EVENT_DISPLAY_RESIZE) {
+	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
+	al_destroy_bitmap(game->data->winbitmap);
+	game->data->winbitmap = al_create_bitmap(game->viewport.width, game->viewport.height);
+}
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
@@ -155,6 +160,10 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
 	PrintConsole(game, "WINNER %d", game->data->berek);
+	al_destroy_font(data->scorefont);
+
+	al_destroy_bitmap(game->data->winbitmap);
+	game->data->winbitmap = al_create_bitmap(game->viewport.width, game->viewport.height);
 
 	data->scorefont = al_load_font(GetDataFilePath(game, "fonts/chlorinuh.ttf"), game->viewport.height*0.5, 0);
 	data->counter=0;
