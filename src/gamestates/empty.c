@@ -127,6 +127,15 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	}
 
 	if (data->out) {
+
+		if (!data->starting) {
+			int vol = 100 - data->outy + 50;
+			if (vol < 0) vol = 0;
+			if (vol > 100) vol=100;
+			vol*=0.8;
+			al_set_sample_instance_gain(game->data->music, vol/100.0);
+		}
+
 		if (data->outy > 150) {
 			if (data->starting) {
 				StopCurrentGamestate(game);
@@ -409,6 +418,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 
 	al_stop_sample_instance(game->data->music);
 	al_play_sample_instance(game->data->music);
+	al_stop_sample_instance(data->music);
 	al_play_sample_instance(data->music);
 	al_set_sample_instance_gain(game->data->music, 0.8);
 	data->blink_counter = 0;
